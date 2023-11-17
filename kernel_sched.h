@@ -101,6 +101,8 @@ typedef struct thread_control_block {
 
 	PCB* owner_pcb; /**< @brief This is null for a free TCB */
 
+	PTCB* ptcb;
+
 	cpu_context_t context; /**< @brief The thread context */
 	Thread_type type; /**< @brief The type of thread */
 	Thread_state state; /**< @brief The state of the thread */
@@ -129,6 +131,27 @@ typedef struct thread_control_block {
 #endif
 
 } TCB;
+
+//kainourgia!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+typedef struct process_thread_control_block {
+
+TCB* tcb;
+
+Task task;
+int argl;
+void* args;
+
+int exitval; //otan teleiwsei to thread h timh tha apothikeutei sthn exitval
+
+int exited; //0 an den exei teleiwsei to thread 1 an exei teleiwsei 
+int detached; //0  den einai detached, dld mporeis na to kaneis join, 1 einai detached
+CondVar exit_cv; //otan ena thread kanei join ena allo ginetai blocked kai mpainei edw, etsi wste to 2o thread otan teleiwsei na to kanei wakeup
+
+int refcount; //otan ginei 0 diagrafeis to PTCB (arithos p deixnei posa thread xreiazontai auto to ptcb) 
+//refcount= 0 shmainei oti auto to ptcb den to perimenei kanenas ara to diagrafeis, auksanetai 
+//otan kapoios kanei epituxws join se auto to nhma
+rlnode ptcb_list_node; //to node pou tha mpei mesa sth lista tou pcb 
+}PTCB;
 
 /** @brief Thread stack size.
 
@@ -212,6 +235,10 @@ TCB* spawn_thread(PCB* pcb, void (*func)());
   @returns 1 if the thread state was @c STOPPED or @c INIT, 0 otherwise
 
 */
+
+PTCB* spawn_ptcb(TCB* tcb, Task task, int argl, void* args);
+
+
 int wakeup(TCB* tcb);
 
 /** 

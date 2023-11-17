@@ -189,6 +189,29 @@ TCB* spawn_thread(PCB* pcb, void (*func)())
 	return tcb;
 }
 
+//kainourgia!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+PTCB* spawn_ptcb(TCB* tcb, Task task, int argl, void* args){
+
+	PTCB* ptcb = (PTCB*)malloc(sizeof(PTCB));
+
+	ptcb->tcb= tcb;
+	tcb->ptcb=ptcb;
+
+	ptcb->task=task;
+	ptcb->argl=argl;
+	ptcb->args=args; 
+
+	ptcb->exitval=0;
+	ptcb->exited=0;
+	ptcb->detached=0;
+	ptcb->exit_cv= COND_INIT;
+	rlnode_init(& ptcb->ptcb_list_node, ptcb);
+	rlist_push_back(& tcb->owner_pcb->ptcb_list, & ptcb->ptcb_list_node);
+
+	ptcb->refcount=1;
+	return ptcb;
+}
+
 /*
   This is called with sched_spinlock locked !
  */

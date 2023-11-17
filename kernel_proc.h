@@ -60,6 +60,9 @@ typedef struct process_control_block {
 
   FCB* FIDT[MAX_FILEID];  /**< @brief The fileid table of the process */
 
+  rlnode ptcb_list;
+  int thread_count;
+
 } PCB;
 
 
@@ -81,6 +84,9 @@ void initialize_processes();
   @param pid the pid of the process 
   @returns A pointer to the PCB of the process, or NULL.
 */
+
+void start_ptcb_main_thread();
+
 PCB* get_pcb(Pid_t pid);
 
 /**

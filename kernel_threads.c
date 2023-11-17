@@ -8,7 +8,13 @@
   */
 Tid_t sys_CreateThread(Task task, int argl, void* args)
 {
-	return NOTHREAD;
+  PCB* pcb = CURPROC;
+  TCB* tcb = spawn_thread(pcb, start_ptcb_main_thread);
+
+  spawn_ptcb(tcb, task, argl, args);
+
+  wakeup (tcb);
+	return (Tid_t) tcb->ptcb;
 }
 
 /**
@@ -16,7 +22,7 @@ Tid_t sys_CreateThread(Task task, int argl, void* args)
  */
 Tid_t sys_ThreadSelf()
 {
-	return (Tid_t) cur_thread();
+	return (Tid_t) cur_thread()->ptcb;
 }
 
 /**
