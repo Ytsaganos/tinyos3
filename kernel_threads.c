@@ -3,7 +3,6 @@
 #include "kernel_sched.h"
 #include "kernel_proc.h"
 #include "kernel_cc.h"
-#include "kernel_streams.h"
 
 /** 
   @brief Create a new thread in the current process.
@@ -11,14 +10,16 @@
 Tid_t sys_CreateThread(Task task, int argl, void* args)
 {
   if(task != NULL){
-    PCB* pcb = CURPROC;
-    TCB* tcb = spawn_thread(pcb, start_ptcb_main_thread);
 
-    spawn_ptcb(tcb, task, argl, args);
+    PCB* pcb = CURPROC; // Get current proccess
+    TCB* tcb = spawn_thread(pcb, start_ptcb_main_thread); // Save the thread that is returned from spawn_thread to the pointer tcb 
 
+    spawn_ptcb(tcb, task, argl, args); // spawn_ptcb has as argument the tcb 
+
+    // Increasing thread count cause we created one more thread
     pcb -> thread_count++;
-    wakeup (tcb);
-	 return (Tid_t) tcb->ptcb;
+    wakeup (tcb); // Making the thread ready
+	  return (Tid_t) tcb->ptcb;
   }
 else
 
@@ -40,7 +41,6 @@ Tid_t sys_ThreadSelf()
   */
 int sys_ThreadJoin(Tid_t tid, int* exitval)
 {
-
   PCB* curproc = CURPROC;  // Get current process.
 
 
@@ -93,32 +93,27 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
 
 }
 
-
-
 /**
   @brief Detach the given thread.
   */
 int sys_ThreadDetach(Tid_t tid)
 {
-  PCB* pcb = CURPROC;
-  PTCB* ptcb = (PTCB*) tid;
+  PCB* pcb = CURPROC; // Get current proccess
+  PTCB* ptcb = (PTCB*) tid;  
 
+  // Checking if the ptcb is not in the list or if it is exited
   if(rlist_find(&(pcb-> ptcb_list),ptcb,NULL) == NULL || ptcb-> exited == 1)
   {
     return -1;
   }
-  
-  ptcb -> detached = 1;
+  //Now that we made sure that the ptcb is in the list and it's not exited,
+  else
+    ptcb -> detached = 1; // we make the ptcb detached
    
-  kernel_broadcast(&(ptcb -> exit_cv));
+    kernel_broadcast(&(ptcb -> exit_cv)); // Wake up every ptcb that has joined
 
-  return 0;
-
+  	return 0;
 }
-
-
-
-
 
 /**
   @brief Terminate the current thread.
@@ -126,20 +121,22 @@ int sys_ThreadDetach(Tid_t tid)
 void sys_ThreadExit(int exitval)
 {
 
- //euresi tou current ptcb meso tou current tcb
+ // Find current ptcb from current tcb
   PTCB* ptcb = cur_thread()->ptcb;
 
   
-//initialize ton exit metabliton tou ptcb
-  ptcb->exited = 1;
+  // Initializing ptcb's exit variables
+
+  ptcb->exited = 1; // exited=1 means that the thread is finished
   ptcb->exitval = exitval;
-  kernel_broadcast(&(ptcb->exit_cv));//broadcast sto exit_cv gia na ksipnisoun osoi perimenoun
-  //elegxos threadcount kai refcount
+  kernel_broadcast(&(ptcb->exit_cv)); // broadcast in exit_cv to wake up the ptcbs waiting
+  
   PCB *curproc = CURPROC;  /* cache for efficiency */
+  // Decreasing thread count
   curproc->thread_count--;
 
   
-//an thread count == 0 katharizo kai enimerono to PTCB opos tin sys_exit
+  // If thread count == 0 katharizo kai enimerono to PTCB
   if(CURPROC->thread_count == 0){
   
 
@@ -161,7 +158,7 @@ void sys_ThreadExit(int exitval)
     }
 
     /* Put me into my parent's exited list */
-    if(curproc->parent != NULL) {   /* Maybe this is init */
+    if(curproc->parent != NULL) {  
       rlist_push_front(& curproc->parent->exited_list, &curproc->exited_node);
       kernel_broadcast(& curproc->parent->child_exit);
     }
@@ -172,7 +169,7 @@ void sys_ThreadExit(int exitval)
    while(is_rlist_empty(&curproc->ptcb_list) != 0){
     rlnode* ptcb_temp;
     ptcb_temp = rlist_pop_front(&curproc->ptcb_list);
-    free(ptcb_temp->ptcb);
+    free(ptcb_temp);
 
    }
     if(curproc->args) {
@@ -195,9 +192,7 @@ void sys_ThreadExit(int exitval)
     /* Now, mark the process as exited. */
     curproc->pstate = ZOMBIE;
   }
-
-  kernel_sleep(EXITED,SCHED_USER);//as paei to thread gia nani
+  kernel_sleep(EXITED,SCHED_USER);// Thread goes to sleep
  
 }
-
 
