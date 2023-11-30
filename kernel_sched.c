@@ -208,7 +208,7 @@ PTCB* spawn_ptcb(TCB* tcb, Task task, int argl, void* args){
 	rlnode_init(& ptcb->ptcb_list_node, ptcb);
 	rlist_push_back(& tcb->owner_pcb->ptcb_list, & ptcb->ptcb_list_node);
 
-	ptcb->refcount=1;
+	ptcb->refcount=0;
 	return ptcb;
 }
 

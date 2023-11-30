@@ -204,7 +204,6 @@ void Cond_Broadcast(CondVar* cv)
 
 
 
-
 /*
  *
  * The kernel locks
