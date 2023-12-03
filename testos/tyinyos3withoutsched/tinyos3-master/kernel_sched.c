@@ -11,7 +11,7 @@
 #include <valgrind/valgrind.h>
 #endif
 
-#define MAX_YIELDS  1000
+#define MAX_YIELDS  500
 #define MAX_LEVEL 5
 
 /********************************************
@@ -445,6 +445,25 @@ void sleep_releasing(Thread_state state, Mutex* mx, enum SCHED_CAUSE cause,
 
 /* This function is the entry point to the scheduler's context switching */
 
+
+void boost()
+{
+	rlnode* sel = NULL;
+
+	for(int i = MAX_LEVEL -2 ; i >= 0; i--)
+	{
+		if(!is_rlist_empty(&SCHED[i]))
+		{
+			 sel = rlist_pop_front(&SCHED[i]);
+			 
+			 rlist_push_back(&SCHED[i + 1],sel);
+			 sel -> tcb -> priority++;
+		}
+
+	}
+}
+
+
 int yield_calls = 0;
 
 void yield(enum SCHED_CAUSE cause)
@@ -454,7 +473,7 @@ void yield(enum SCHED_CAUSE cause)
 
 	if(yield_calls == MAX_YIELDS)
 	{
-		//boost();
+		boost();
 		yield_calls = 0;
 	}
 
@@ -527,10 +546,6 @@ void yield(enum SCHED_CAUSE cause)
 }
 
 
-void boost()
-{
-
-}
 
 
 /*
